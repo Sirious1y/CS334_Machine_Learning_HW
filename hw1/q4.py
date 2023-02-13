@@ -1,7 +1,6 @@
 import argparse
 import numpy as np
 import pandas as pd
-from sklearn import preprocessing as pp
 import knn
 import matplotlib.pyplot as plt
 
@@ -27,12 +26,10 @@ def standard_scale(xTrain, xTest):
     xTest : nd-array with shape m x d
         Transformed test data using same process as training.
     """
-    # mean = xTrain.mean(axis=0)
-    # var = xTrain.std(axis=0)
-    # xTrain = (xTrain - mean) / var
-    scaler = pp.StandardScaler().fit(xTrain)
-    xTrain = scaler.transform(xTrain)
-    xTest = scaler.transform(xTest)
+    mean = xTrain.mean(axis=0)
+    var = xTrain.std(axis=0)
+    xTrain = (xTrain - mean) / var
+    xTest = (xTest - mean) / var
 
     return xTrain, xTest
 
@@ -59,9 +56,11 @@ def minmax_range(xTrain, xTest):
     xTest : nd-array with shape m x d
         Transformed test data using same process as training.
     """
-    scaler = pp.MinMaxScaler().fit(xTrain)
-    xTrain = scaler.transform(xTrain)
-    xTest = scaler.transform(xTest)
+    min = xTrain.min(axis=0)
+    max = xTrain.max(axis=0)
+    xTrain = (xTrain - min) / (max - min)
+    xTest = (xTest - min) / (max - min)
+
     return xTrain, xTest
 
 
@@ -127,7 +126,26 @@ def knn_train_test(k, xTrain, yTrain, xTest, yTest):
 
 
 def plot_acc(xTrain, yTrain, xTest, yTest):
-    results = []
+    """
+    Plot the testing accuracies of dataset with different preprocessing techniques with respect of different K values
+
+    Parameters
+    ----------
+    xTrain : nd-array with shape n x d
+        Attributes of training data
+    yTrain : 1d-array with shape n
+        Labels of training data
+    xTest : nd-array with shape n x d
+        The data to predict
+    yTest : 1d-array with shape n
+        Labels of testing data
+
+    Returns
+    -------
+    None
+
+    """
+    results = [] # variable to store the accuracies of each k value
     for k in range(1,11):
         acc1 = knn_train_test(k, xTrain, yTrain, xTest, yTest)
         # print("Test Acc (no-preprocessing):", acc1)

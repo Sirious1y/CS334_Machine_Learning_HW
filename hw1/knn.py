@@ -104,6 +104,7 @@ def accuracy(yHat, yTrue):
 def plot_k(xTrain, yTrain, xTest, yTest):
     """
     Plot the training accuracy and testing accuracy with respect to k (0 <= k <= 10)
+
     Parameters
     ----------
     xTrain : nd-array with shape n x d
