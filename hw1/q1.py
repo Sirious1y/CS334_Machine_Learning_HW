@@ -13,8 +13,8 @@ def gen_random_samples():
     sample : 1d array of size 5 million
         An array of 5 million random samples
     """
-    ## TODO FILL IN
-    return None
+
+    return np.random.randn(5000000)
 
 
 def sum_squares_for(samples):
@@ -35,7 +35,14 @@ def sum_squares_for(samples):
     """
     timeElapse = 0
     ss = 0
-    ## TODO FILL IN
+
+    start = time.time()
+    for i in samples:
+        ss += i * i
+
+    end = time.time()
+    timeElapse = end - start
+
     return ss, timeElapse
 
 
@@ -57,7 +64,12 @@ def sum_squares_np(samples):
     """
     timeElapse = 0
     ss = 0
-    ## TODO FILL IN
+
+    start = time.time()
+    ss = np.sum(samples**2)
+    end = time.time()
+    timeElapse = end - start
+
     return ss, timeElapse
 
 
@@ -73,6 +85,7 @@ def main():
     # print out the values
     print("Time [sec] (for loop):", timeFor)
     print("Time [sec] (np loop):", timeNp)
+    print("np loop is ", timeFor/timeNp, " times faster than for loop.")
 
 
 if __name__ == "__main__":

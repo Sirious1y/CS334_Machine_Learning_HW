@@ -1,8 +1,9 @@
 import argparse
 import numpy as np
 import pandas as pd
-
+from sklearn import preprocessing as pp
 import knn
+import matplotlib.pyplot as plt
 
 
 def standard_scale(xTrain, xTest):
@@ -26,7 +27,13 @@ def standard_scale(xTrain, xTest):
     xTest : nd-array with shape m x d
         Transformed test data using same process as training.
     """
-    # TODO FILL IN
+    # mean = xTrain.mean(axis=0)
+    # var = xTrain.std(axis=0)
+    # xTrain = (xTrain - mean) / var
+    scaler = pp.StandardScaler().fit(xTrain)
+    xTrain = scaler.transform(xTrain)
+    xTest = scaler.transform(xTest)
+
     return xTrain, xTest
 
 
@@ -52,7 +59,9 @@ def minmax_range(xTrain, xTest):
     xTest : nd-array with shape m x d
         Transformed test data using same process as training.
     """
-    # TODO FILL IN
+    scaler = pp.MinMaxScaler().fit(xTrain)
+    xTrain = scaler.transform(xTrain)
+    xTest = scaler.transform(xTest)
     return xTrain, xTest
 
 
@@ -75,7 +84,14 @@ def add_irr_feature(xTrain, xTest):
     xTest : nd-array with shape m x (d+2)
         Test data with 2 new noisy Gaussian features
     """
-    # TODO FILL IN
+    for i in range(2):
+        add_feature = np.random.normal(loc=0, scale=1, size=xTrain.shape[0])
+        add_feature = np.transpose(np.atleast_2d(add_feature))
+        xTrain = np.append(xTrain, add_feature, axis=1)
+        add_feature = np.random.normal(loc=0, scale=1, size=xTest.shape[0])
+        add_feature = np.transpose(np.atleast_2d(add_feature))
+        xTest = np.append(xTest, add_feature, axis=1)
+
     return xTrain, xTest
 
 
@@ -108,7 +124,41 @@ def knn_train_test(k, xTrain, yTrain, xTest, yTest):
     # predict the test dataset
     yHatTest = model.predict(xTest)
     return knn.accuracy(yHatTest, yTest['label'])
-    
+
+
+def plot_acc(xTrain, yTrain, xTest, yTest):
+    results = []
+    for k in range(1,11):
+        acc1 = knn_train_test(k, xTrain, yTrain, xTest, yTest)
+        # print("Test Acc (no-preprocessing):", acc1)
+        # preprocess the data using standardization scaling
+        xTrainStd, xTestStd = standard_scale(xTrain, xTest)
+        acc2 = knn_train_test(k, xTrainStd, yTrain, xTestStd, yTest)
+        # print("Test Acc (standard scale):", acc2)
+        # preprocess the data using min max scaling
+        xTrainMM, xTestMM = minmax_range(xTrain, xTest)
+        acc3 = knn_train_test(k, xTrainMM, yTrain, xTestMM, yTest)
+        # print("Test Acc (min max scale):", acc3)
+        # add irrelevant features
+        xTrainIrr, yTrainIrr = add_irr_feature(xTrain, xTest)
+        acc4 = knn_train_test(k, xTrainIrr, yTrain, yTrainIrr, yTest)
+        # print("Test Acc (with irrelevant feature):", acc4)
+        results.append([k, acc1, acc2, acc3, acc4])
+
+    results = pd.DataFrame(data=results, columns=['k', 'NoPreprocessing Acc', 'Standardization Acc', 'Min Max Acc',
+                                                  'Irrelevant Feature Acc'])
+
+    # plot the accuracies with respect to k
+    plot = results.plot.line(x='k')
+    plt.title('Accuracies of Different Preprocessing Techniques with Respect to K')
+    plt.xticks(np.arange(0, 11, 1.0))
+    plot.set_xlabel('K')
+    plot.set_ylabel('Acc')
+
+    plt.show()
+
+    return None
+
 
 def main():
     # set up the program to take in arguments from the command line
@@ -151,6 +201,9 @@ def main():
     xTrainIrr, yTrainIrr = add_irr_feature(xTrain, xTest)
     acc4 = knn_train_test(args.k, xTrainIrr, yTrain, yTrainIrr, yTest)
     print("Test Acc (with irrelevant feature):", acc4)
+
+    plot_acc(xTrain, yTrain, xTest, yTest)
+
 
 if __name__ == "__main__":
     main()
