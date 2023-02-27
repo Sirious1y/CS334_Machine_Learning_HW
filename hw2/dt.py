@@ -79,17 +79,37 @@ class DecisionTree(object):
         return self
 
     def build_tree(self, xFeat, y, depth):
+        """
+        Recursively build the decision tree
+
+        Parameters
+        ----------
+        xFeat : nd-array with shape n x d
+            Training data
+        y : 1d array with shape n
+            Array of labels associated with training data.
+        depth: int
+            current depth being built
+
+        Returns
+        -------
+        : Node
+            the root of subtree that is built
+        """
         sample_n, feature_n = xFeat.shape
         label_n = len(np.unique(y))
 
         # Termination
         if depth == self.maxDepth or sample_n <= self.minLeafSample or label_n == 1:
             values, counts = np.unique(y, return_counts = True)
-            return Node(label = values[counts.argmax()])
+            # print("stop build")
+            # print(values[counts.argmax()])
+            return Node(label=values[counts.argmax()])
 
         # Find the feature and threshold
         split_feature, split_threshold = self.split(xFeat, y)
-
+        # print(xFeat)
+        # print(split_feature)
         left_idx = xFeat.loc[:, split_feature] < split_threshold
         right_idx = xFeat.loc[:, split_feature] >= split_threshold
         xFeat = xFeat.drop(columns=split_feature)
@@ -136,7 +156,7 @@ class DecisionTree(object):
                 thresholds = np.unique(xFeat.loc[:, feature])
                 for threshold in thresholds:
                     current_info = self.info_gain(xFeat, y, feature, threshold)
-                    if current_info < info_chosen:
+                    if current_info > info_chosen:
                         feature_chosen = feature
                         threshold_chosen = threshold
                         info_chosen = current_info
@@ -259,8 +279,50 @@ class DecisionTree(object):
             Predicted class label per sample
         """
         yHat = [] # variable to store the estimated class label
-        # TODO
+
+        # current_node = self.tree
+        # while current_node.left is not None:
+        #     print(current_node.feature, current_node.label, current_node.threshold, current_node.left is None, current_node.right is None)
+        #     current_node = current_node.left
+        # print(current_node.feature, current_node.label, current_node.threshold, current_node.left is None,
+        #       current_node.right is None)
+
+        for index, row in xFeat.iterrows():
+            yHat.append(self.node_predict(row, self.tree))
+
+        yHat = np.array(yHat)
         return yHat
+
+    def node_predict(self, row, node):
+        """
+        Given the instance and current node,
+        predict which subtree to go or
+        predict the label if at leaf node
+
+        Parameters
+        ----------
+        row: 1d array with shape d
+            the current instance being analyzed
+        node: Node
+            the current node that provide prediction result
+
+        Returns
+        -------
+        node.label : bool
+            the predicted label of given instance
+        """
+        # print(node.label)
+        # if node.label is not None:
+        #     self.node_predict(row, node.left)
+        # else:
+        #     return node.label
+        if node.label is None:
+            if row.loc[node.feature] < node.threshold:
+                return self.node_predict(row, node.left)
+            else:
+                return self.node_predict(row, node.right)
+        else:
+            return node.label
 
 
 def dt_train_test(dt, xTrain, yTrain, xTest, yTest):
