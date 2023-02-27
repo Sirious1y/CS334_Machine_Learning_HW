@@ -5,20 +5,20 @@ from sklearn.metrics import accuracy_score
 
 
 class Node:
-    feature_idx = None
+    feature = None
     threshold = None
     left = None
     right = None
     label = None
 
-    def __init__(self, feature_idx, threshold, left, right, label):
+    def __init__(self, feature=None, threshold=None, left=None, right=None, label=None):
         """
         Tree node constructor
 
         Parameters
         ----------
-        feature_idx: int
-            index of the feature which current node represents
+        feature: str
+            the feature which current node represents
         threshold: float
             threshold that separates left and right node
         left: node
@@ -28,7 +28,7 @@ class Node:
         label: boolean
             if the node is a leaf node, label is the corresponding prediction result
         """
-        self.feature_idx = feature_idx
+        self.feature = feature
         self.threshold = threshold
         self.left = left
         self.right = right
@@ -38,6 +38,7 @@ class DecisionTree(object):
     maxDepth = 0       # maximum depth of the decision tree
     minLeafSample = 0  # minimum number of samples in a leaf
     criterion = None   # splitting criterion
+    tree = None
 
     def __init__(self, criterion, maxDepth, minLeafSample):
         """
@@ -57,6 +58,7 @@ class DecisionTree(object):
         self.criterion = criterion
         self.maxDepth = maxDepth
         self.minLeafSample = minLeafSample
+        self.tree = None
 
     def train(self, xFeat, y):
         """
@@ -73,8 +75,73 @@ class DecisionTree(object):
         -------
         self : object
         """
-        # TODO do whatever you need
+        self.tree = self.build_tree(xFeat, y, 0)
         return self
+
+    def build_tree(self, xFeat, y, depth):
+        sample_n, feature_n = xFeat.shape
+        label_n = len(np.unique(y))
+
+        # Termination
+        if depth == self.maxDepth or sample_n <= self.minLeafSample or label_n == 1:
+            values, counts = np.unique(y, return_counts = True)
+            return Node(label = values[counts.argmax()])
+
+        # Find the feature and threshold
+        split_feature, split_threshold = self.split(xFeat, y)
+
+        left_idx = xFeat.loc[:, split_feature] < split_threshold
+        right_idx = xFeat.loc[:, split_feature] >= split_threshold
+        xFeat = xFeat.drop(columns=split_feature)
+        left_tree = self.build_tree(xFeat[left_idx], y[left_idx], depth + 1)
+        right_tree = self.build_tree(xFeat[right_idx], y[right_idx], depth + 1)
+
+        return Node(feature=split_feature, threshold=split_threshold, left=left_tree, right=right_tree)
+
+    def split(self, xFeat, y):
+        """
+        Find the best feature and its best threshold to split the tree
+        Parameters
+        ----------
+        xFeat : nd-array with shape n x d
+            Training data
+        y : 1d array with shape n
+            Array of labels associated with training data.
+
+        Returns
+        -------
+        feature_chosen: int
+            the index of best feature
+        threshold_chosen: float
+            threshold at which the samples are split
+        """
+        sample_n, feature_n = xFeat.shape
+        feature_chosen = None
+        threshold_chosen = None
+
+        if self.criterion == 'gini':
+            gini_chosen = 2
+            for feature in xFeat.columns:
+                thresholds = np.unique(xFeat.loc[:, feature])
+                for threshold in thresholds:
+                    current_gini = self.gini_index(xFeat, y, feature, threshold)
+                    if current_gini < gini_chosen:
+                        feature_chosen = feature
+                        threshold_chosen = threshold
+                        gini_chosen = current_gini
+
+        elif self.criterion == 'entropy':
+            info_chosen = -1
+            for feature in xFeat.columns:
+                thresholds = np.unique(xFeat.loc[:, feature])
+                for threshold in thresholds:
+                    current_info = self.info_gain(xFeat, y, feature, threshold)
+                    if current_info < info_chosen:
+                        feature_chosen = feature
+                        threshold_chosen = threshold
+                        info_chosen = current_info
+
+        return feature_chosen, threshold_chosen
 
     def gini(self, y):
         """
@@ -92,6 +159,36 @@ class DecisionTree(object):
         values, counts = np.unique(y, return_counts = True)
         prob = counts / len(y)
         result = 1 - np.sum(np.square(prob))
+        return result
+
+    def gini_index(self, xFeat, y, feature, threshold):
+        """
+        Calculate the weighted average of gini index
+
+        Parameters
+        ----------
+        xFeat: nd-array with shape n x d
+            Part of training data
+        y: 1d array with shape n
+            Array of labels associated with training data.
+        feature: str
+            the feature upon which weighted average of gini index is calculated
+        threshold: float
+            where to split the given feature
+        Returns
+        -------
+        result: float
+            information gain
+        """
+        left_y = y[xFeat.loc[:, feature] < threshold]
+        right_y = y[xFeat.loc[:, feature] >= threshold]
+        left_n = len(left_y)
+        right_n = len(right_y)
+        total = len(y)
+
+        left_gini = self.gini(left_y)
+        right_gini = self.gini(right_y)
+        result = left_n / total * left_gini + right_n / total * right_gini
         return result
 
     def entropy(self, y):
@@ -112,7 +209,7 @@ class DecisionTree(object):
         result = -np.sum(prob * np.log2(prob))
         return result
 
-    def info_gain(self, xFeat, y, feat_idx, threshold):
+    def info_gain(self, xFeat, y, feature, threshold):
         """
         Calculate the information gain
 
@@ -122,16 +219,17 @@ class DecisionTree(object):
             Part of training data
         y: 1d array with shape n
             Array of labels associated with training data.
-        feat_idx: int
-            index of the feature upon which information gain is calculated
+        feature: str
+            the feature upon which information gain is calculated
         threshold: float
             where to split the given feature
         Returns
         -------
-        information gain
+        result: float
+            information gain
         """
-        left_y = y[xFeat[:, feat_idx] < threshold]
-        right_y = y[xFeat[:, feat_idx] >= threshold]
+        left_y = y[xFeat.loc[:, feature] < threshold]
+        right_y = y[xFeat.loc[:, feature] >= threshold]
 
         left_n = len(left_y)
         right_n = len(right_y)
