@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
 
-
 class Node:
     feature = None
     threshold = None
@@ -100,7 +99,7 @@ class DecisionTree(object):
         label_n = len(np.unique(y))
 
         # Termination
-        if depth == self.maxDepth or sample_n <= self.minLeafSample or label_n == 1:
+        if depth == self.maxDepth or sample_n <= self.minLeafSample or label_n == 1 or feature_n == 0:
             values, counts = np.unique(y, return_counts = True)
             # print("stop build")
             # print(values[counts.argmax()])
@@ -112,7 +111,7 @@ class DecisionTree(object):
         # print(split_feature)
         left_idx = xFeat.loc[:, split_feature] < split_threshold
         right_idx = xFeat.loc[:, split_feature] >= split_threshold
-        xFeat = xFeat.drop(columns=split_feature)
+        xFeat = xFeat.drop(columns=split_feature) # drop the selected feature
         left_tree = self.build_tree(xFeat[left_idx], y[left_idx], depth + 1)
         right_tree = self.build_tree(xFeat[right_idx], y[right_idx], depth + 1)
 
@@ -280,13 +279,6 @@ class DecisionTree(object):
         """
         yHat = [] # variable to store the estimated class label
 
-        # current_node = self.tree
-        # while current_node.left is not None:
-        #     print(current_node.feature, current_node.label, current_node.threshold, current_node.left is None, current_node.right is None)
-        #     current_node = current_node.left
-        # print(current_node.feature, current_node.label, current_node.threshold, current_node.left is None,
-        #       current_node.right is None)
-
         for index, row in xFeat.iterrows():
             yHat.append(self.node_predict(row, self.tree))
 
@@ -358,6 +350,15 @@ def dt_train_test(dt, xTrain, yTrain, xTest, yTest):
     yHatTest = dt.predict(xTest)
     testAcc = accuracy_score(yTest['label'], yHatTest)
     return trainAcc, testAcc
+
+def plot_c(xTrain, yTrain, xTest, yTest):
+    result = []
+    for max_d in range(12):
+        for min_s in [1, 5, 10, 50, 100, 500, 1000]:
+            dt = DecisionTree('gini', max_d, min_s)
+            trainAcc, testAcc = dt_train_test(dt, xTrain, yTrain, xTest, yTest)
+            result.append([max_d, min_s, testAcc])
+
 
 
 def main():
