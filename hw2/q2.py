@@ -2,10 +2,13 @@ import argparse
 import numpy as np
 import pandas as pd
 from sklearn import metrics
+from sklearn.model_selection import KFold
+from sklearn.model_selection import ShuffleSplit
+from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 import time
 
- 
+
 def holdout(model, xFeat, y, testSize):
     """
     Split xFeat into random train and test based on the testSize and
@@ -34,7 +37,15 @@ def holdout(model, xFeat, y, testSize):
     trainAuc = 0
     testAuc = 0
     timeElapsed = 0
-    # TODO fill int
+
+    start = time.time()
+
+    xTrain, xTest, yTrain, yTest = train_test_split(xFeat, y, test_size=testSize)
+    trainAuc, testAuc = sktree_train_test(model, xTrain, yTrain, xTest, yTest)
+
+    end = time.time()
+    timeElapsed = end - start
+
     return trainAuc, testAuc, timeElapsed
 
 
@@ -44,7 +55,6 @@ def kfold_cv(model, xFeat, y, k):
     k-folds as a validation set, with the model fitting on the remaining
     k-1 folds. Return the model performance on the training and
     validation (test) set. 
-
 
     Parameters
     ----------
@@ -69,7 +79,26 @@ def kfold_cv(model, xFeat, y, k):
     trainAuc = 0
     testAuc = 0
     timeElapsed = 0
-    # TODO FILL IN
+    trainR = []
+    testR = []
+
+    start = time.time()
+
+    kf = KFold(n_splits=k)
+    for fold, (train_idx, test_idx) in enumerate(kf.split(xFeat)):
+        xTrain, yTrain = xFeat.iloc[train_idx], y.iloc[train_idx]
+        xTest, yTest = xFeat.iloc[test_idx], y.iloc[test_idx]
+
+        ktrainAuc, ktestAuc = sktree_train_test(model, xTrain, yTrain, xTest, yTest)
+        trainR.append(ktrainAuc)
+        testR.append(ktestAuc)
+
+    trainAuc = np.mean(trainR)
+    testAuc = np.mean(testR)
+
+    end = time.time()
+    timeElapsed = end - start
+
     return trainAuc, testAuc, timeElapsed
 
 
@@ -91,7 +120,9 @@ def mc_cv(model, xFeat, y, testSize, s):
     y : 1-array with shape n x 1
         Labels of the dataset
     testSize : float
-        Portion of the dataset to serve as a holdout. 
+        Portion of the dataset to serve as a holdout.
+    s: int
+        number of samples for performing the validation assessment
 
     Returns
     -------
@@ -105,7 +136,26 @@ def mc_cv(model, xFeat, y, testSize, s):
     trainAuc = 0
     testAuc = 0
     timeElapsed = 0
-    # TODO FILL IN
+    trainR = []
+    testR = []
+
+    start = time.time()
+
+    mc = ShuffleSplit(n_splits=s, test_size=testSize)
+    for fold, (train_idx, test_idx) in enumerate(mc.split(xFeat)):
+        xTrain, yTrain = xFeat.iloc[train_idx], y.iloc[train_idx]
+        xTest, yTest = xFeat.iloc[test_idx], y.iloc[test_idx]
+
+        ktrainAuc, ktestAuc = sktree_train_test(model, xTrain, yTrain, xTest, yTest)
+        trainR.append(ktrainAuc)
+        testR.append(ktestAuc)
+
+    trainAuc = np.mean(trainR)
+    testAuc = np.mean(testR)
+
+    end = time.time()
+    timeElapsed = end - start
+
     return trainAuc, testAuc, timeElapsed
 
 

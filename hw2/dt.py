@@ -16,15 +16,15 @@ class Node:
 
         Parameters
         ----------
-        feature: str
+        feature : str
             the feature which current node represents
-        threshold: float
+        threshold : float
             threshold that separates left and right node
-        left: node
+        left : node
             left node
-        right: node
+        right : node
             right node
-        label: boolean
+        label : boolean
             if the node is a leaf node, label is the corresponding prediction result
         """
         self.feature = feature
@@ -129,9 +129,9 @@ class DecisionTree(object):
 
         Returns
         -------
-        feature_chosen: int
+        feature_chosen : int
             the index of best feature
-        threshold_chosen: float
+        threshold_chosen : float
             threshold at which the samples are split
         """
         sample_n, feature_n = xFeat.shape
@@ -168,11 +168,11 @@ class DecisionTree(object):
 
         Parameters
         ----------
-        y: 1d array
+        y : 1d array
             Array of labels of which the Gini Index is calculated
         Returns
         -------
-        result: float
+        result : float
             the Gini Index
         """
         values, counts = np.unique(y, return_counts = True)
@@ -186,17 +186,17 @@ class DecisionTree(object):
 
         Parameters
         ----------
-        xFeat: nd-array with shape n x d
+        xFeat : nd-array with shape n x d
             Part of training data
-        y: 1d array with shape n
+        y : 1d array with shape n
             Array of labels associated with training data.
-        feature: str
+        feature : str
             the feature upon which weighted average of gini index is calculated
         threshold: float
             where to split the given feature
         Returns
         -------
-        result: float
+        result : float
             information gain
         """
         left_y = y[xFeat.loc[:, feature] < threshold]
@@ -216,11 +216,11 @@ class DecisionTree(object):
 
         Parameters
         ----------
-        y: 1d array
+        y : 1d array
             Array of labels of which the entropy is calculated
         Returns
         -------
-        result: float
+        result : float
             the entropy
         """
         values, counts = np.unique(y, return_counts = True)
@@ -234,17 +234,17 @@ class DecisionTree(object):
 
         Parameters
         ----------
-        xFeat: nd-array with shape n x d
+        xFeat : nd-array with shape n x d
             Part of training data
-        y: 1d array with shape n
+        y : 1d array with shape n
             Array of labels associated with training data.
-        feature: str
+        feature : str
             the feature upon which information gain is calculated
-        threshold: float
+        threshold : float
             where to split the given feature
         Returns
         -------
-        result: float
+        result : float
             information gain
         """
         left_y = y[xFeat.loc[:, feature] < threshold]
@@ -293,9 +293,9 @@ class DecisionTree(object):
 
         Parameters
         ----------
-        row: 1d array with shape d
+        row : 1d array with shape d
             the current instance being analyzed
-        node: Node
+        node : Node
             the current node that provide prediction result
 
         Returns
@@ -350,16 +350,6 @@ def dt_train_test(dt, xTrain, yTrain, xTest, yTest):
     yHatTest = dt.predict(xTest)
     testAcc = accuracy_score(yTest['label'], yHatTest)
     return trainAcc, testAcc
-
-def plot_c(xTrain, yTrain, xTest, yTest):
-    result = []
-    for max_d in range(12):
-        for min_s in [1, 5, 10, 50, 100, 500, 1000]:
-            dt = DecisionTree('gini', max_d, min_s)
-            trainAcc, testAcc = dt_train_test(dt, xTrain, yTrain, xTest, yTest)
-            result.append([max_d, min_s, testAcc])
-
-
 
 def main():
     """
