@@ -66,11 +66,14 @@ def kfold_dt(xFeat, y):
     dt_md_result = []
     dt_msl_result = []
     y = y['label']
+
+    # find optimal Max_Depth
     for md in range(1, 16):
         dt = DecisionTreeClassifier(max_depth=md)
         scores = cross_val_score(estimator=dt, X=xFeat, y=y, scoring='roc_auc', cv=kf)
         dt_md_result.append([md, np.mean(scores)])
 
+    # find optimal Min_Sample_Leaf
     for msl in range(0, 401, 25):
         if msl == 0:
             msl += 1
