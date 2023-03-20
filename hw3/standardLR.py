@@ -12,8 +12,33 @@ class StandardLR(LinearRegression):
         """
         See definition in LinearRegression class
         """
+        timeElapse = 0
         trainStats = {}
-        # TODO: DO SOMETHING
+        start = time.time()
+
+        # Train
+        xTrain = np.hstack((np.ones((xTrain.shape[0], 1)), xTrain))
+        xTest = np.hstack((np.ones((xTest.shape[0], 1)), xTest))
+        self.beta = np.linalg.inv(xTrain.T.dot(xTrain)).dot(xTrain.T).dot(yTrain)
+
+        # Test
+        trainMSE = self.mse(xTrain, yTrain)
+        testMSE = self.mse(xTest, yTest)
+
+        # print(trainMSE, testMSE)
+        # print(self.beta)
+
+        end = time.time()
+        timeElapse = end - start
+
+        trainStats = {
+            0: {
+                'time': timeElapse,
+                'train-mse': trainMSE,
+                'test-mse': testMSE
+            }
+        }
+
         return trainStats
 
 

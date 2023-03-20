@@ -47,7 +47,7 @@ class LinearRegression(ABC):
             Predicted response per sample
         """
         yHat = []
-        # TODO
+        yHat = xFeat.dot(self.beta)
         return yHat
 
     def mse(self, xFeat, y):

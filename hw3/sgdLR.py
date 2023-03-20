@@ -21,7 +21,38 @@ class SgdLR(LinearRegression):
         See definition in LinearRegression class
         """
         trainStats = {}
-        # TODO: DO SGD
+        timeElapse = 0
+        start = time.time()
+        n = 0
+
+        # Train
+        xTrain = np.hstack((np.ones((xTrain.shape[0], 1)), xTrain))
+        xTest = np.hstack((np.ones((xTest.shape[0], 1)), xTest))
+        self.beta = np.zeros((xTrain.shape[1], 1))
+
+        for epoch in range(self.mEpoch):
+            idx = np.random.permutation(xTrain.shape[0])
+
+            for batch_start in range(0, xTrain.shape[0], self.bs):
+                batch_idx = idx[batch_start: batch_start+self.bs]
+
+                gradient = (xTrain[batch_idx].T.dot(xTrain[batch_idx].dot(self.beta) - yTrain[batch_idx]) / self.bs)
+
+                self.beta -= self.lr * gradient
+
+                trainMSE = self.mse(xTrain, yTrain)
+                testMSE = self.mse(xTest, yTest)
+                end = time.time()
+                timeElapse = end - start
+
+                trainStats[n] = {
+                        'time': timeElapse,
+                        'train-mse': trainMSE,
+                        'test-mse': testMSE
+                }
+
+                n += 1
+
         return trainStats
 
 
